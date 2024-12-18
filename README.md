@@ -1,7 +1,7 @@
 # project_smile
 # Based Smiles: Immutable HBAR Rewards for Genuine Smiles 😊
 
-An innovative Web3 application that uses Hederas decentralized network (inspired by AgentKit and built on Coinbase Development Platform) to analyze your smile and rewards genuine happiness with USDC cryptocurrency. 
+An innovative Web3 application that uses Hederas decentralized network (inspired by AgentKit and built on Coinbase Development Platform) to analyze your smile and rewards genuine happiness with HBARcryptocurrency. 
 
 ## How It Works
 
