@@ -1,0 +1,107 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2820
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fnil\fcharset0 HelveticaNeue-Bold;\f1\fnil\fcharset0 HelveticaNeue;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\deftab560
+\pard\pardeftab560\partightenfactor0
+
+\f0\b\fs40 \cf0 Import contract \
+\pard\pardeftab560\slleading20\pardirnatural\partightenfactor0
+
+\f1\b0\fs26 \cf0 \
+\
+import \{\
+	AccountId,\
+	PrivateKey,\
+	Client,\
+	ContractFunctionParameters,\
+	ContractExecuteTransaction,\
+	ContractCallQuery,\
+	Hbar,\
+	ContractCreateFlow,\
+\} from "@hashgraph/sdk";\
+import fs from "fs";\
+import dotenv from "dotenv";\
+dotenv.config();\
+console.clear();\
+\
+// Configure accounts and client\
+const operatorId = AccountId.fromString(process.env.ACCOUNT_ID);\
+const operatorKey = PrivateKey.fromStringECDSA(process.env.PRIVATE_KEY_HEX);\
+const network = process.env.NETWORK;\
+\
+const client = Client.forNetwork(network).setOperator(operatorId, operatorKey);\
+client.setDefaultMaxTransactionFee(new Hbar(100));\
+client.setDefaultMaxQueryPayment(new Hbar(50));\
+\
+// Hedera Smart Contract Documentation - Using the Hedera SDKs\
+// https://docs.hedera.com/hedera/sdks-and-apis/sdks/smart-contracts\
+\
+async function main() \{\
+	console.log(`\\n\uc0\u55357 \u57312  Hedera Smart Contract Service (HSCS) Example: Deploy & interact with a contract using the Hedera SDKs... \u55357 \u57312 `);\
+\
+	// Import the compiled contract bytecode\
+	const contractBytecode = fs.readFileSync("LookupContract.bin");\
+\
+	// Create (deploy) the smart contract\
+	// https://docs.hedera.com/hedera/sdks-and-apis/sdks/smart-contracts/create-a-smart-contract\
+	console.log(`\\n- Creating (deploying) the smart contract...`);\
+	const contractCreateTx = new ContractCreateFlow()\
+		.setBytecode(contractBytecode)\
+		.setGas(400000)\
+		.setConstructorParameters(new ContractFunctionParameters().addString("Alice").addUint256(111111));\
+\
+	const contractCreateSubmit = await contractCreateTx.execute(client);\
+	const contractCreateRx = await contractCreateSubmit.getReceipt(client);\
+	const contractId = contractCreateRx.contractId;\
+	const contractAddress = contractId.toSolidityAddress();\
+\
+	console.log(`- Created smart contract with ID: $\{contractId\} \uc0\u9989 `);\
+	console.log(`- Contract EVM address: $\{contractAddress\}`);\
+	console.log(`- See contract details in network explorer: https://hashscan.io/$\{network\}/contract/$\{contractId\} \uc0\u55357 \u56599 `);\
+	console.log(`- See transaction details in network explorer: https://hashscan.io/$\{network\}/tx/$\{contractCreateSubmit.transactionId\} \uc0\u55357 \u56599 \\n`);\
+\
+	// Query the contract to check changes in state variable\
+	// https://docs.hedera.com/hedera/sdks-and-apis/sdks/smart-contracts/get-a-smart-contract-function\
+	console.log(`- Querying the contract to check changes in the state variable...`);\
+	let contactName = "Alice";\
+	const contractQueryTx = new ContractCallQuery()\
+		.setContractId(contractId)\
+		.setGas(100000)\
+		.setFunction("getMobileNumber", new ContractFunctionParameters().addString(contactName));\
+	const contractQuerySubmit = await contractQueryTx.execute(client);\
+	const contractQueryResult = contractQuerySubmit.getUint256(0);\
+	console.log(`- Queried the contract - phone number requested for $\{contactName\}: $\{contractQueryResult\} \uc0\u9989 \\n`);\
+\
+	// Execute contract function to update the state variable\
+	// https://docs.hedera.com/hedera/sdks-and-apis/sdks/smart-contracts/call-a-smart-contract-function\
+	console.log(`- Executing the contract function to update the state variable...`);\
+	const contractExecuteTx = new ContractExecuteTransaction()\
+		.setContractId(contractId)\
+		.setGas(100000)\
+		.setFunction("setMobileNumber", new ContractFunctionParameters().addString("Bob").addUint256(222222));\
+	const contractExecuteSubmit = await contractExecuteTx.execute(client);\
+	const contractExecuteRx = await contractExecuteSubmit.getReceipt(client);\
+	console.log(`- Contract function execution status: $\{contractExecuteRx.status\} \uc0\u9989 `);\
+	console.log(`- See transaction details in network explorer: https://hashscan.io/$\{network\}/tx/$\{contractExecuteSubmit.transactionId\} \uc0\u55357 \u56599 \\n`);\
+\
+	// Query the contract to check changes in state variable\
+	console.log(`- Querying the contract to check changes in the state variable...`);\
+	contactName = "Bob";\
+	const contractQueryTx1 = new ContractCallQuery()\
+		.setContractId(contractId)\
+		.setGas(100000)\
+		.setFunction("getMobileNumber", new ContractFunctionParameters().addString(contactName));\
+	const contractQuerySubmit1 = await contractQueryTx1.execute(client);\
+	const contractQueryResult1 = contractQuerySubmit1.getUint256(0);\
+	console.log(`- Queried the contract - phone number requested for $\{contactName\}: $\{contractQueryResult1\} \uc0\u9989 `);\
+\
+	console.log(`\\n- THE END ============================================================\\n`);\
+	console.log(`\uc0\u55357 \u56391  Go to:`);\
+	console.log(`\uc0\u55357 \u56599  www.hedera.com/discord\\n`);\
+\
+	client.close();\
+\}\
+main();\
+}
